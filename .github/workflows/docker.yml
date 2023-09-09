@@ -2,7 +2,7 @@ name: Docker build images with docker
 on:
   push:
     branches:
-    - 'main/**'
+    - 'main'
 jobs:
   docker:
     runs-on: ubuntu-22.04
