@@ -25,9 +25,8 @@ jobs:
 
     - name: Build temp image
       run: |
-        APP_NAME=net-snmp-aes
+        APP_NAME=net-snmp-old
         BASE_IMAGE="$REGISTRY/$GITHUB_REPOSITORY/$APP_NAME"
         LATEST_IMAGE="$BASE_IMAGE:latest"
         cd $APP_NAME
         docker build . -t $LATEST_IMAGE
-        docker push $LATEST_IMAGE
