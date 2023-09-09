@@ -15,7 +15,7 @@ RUN apt-get update -y && apt-get upgrade -y && \
     make install
 
 # Define the final stage
-FROM ${OS}:${OS_VER}
+FROM debian:bullseye
 
 ENV LD_LIBRARY_PATH /usr/local/lib
 
