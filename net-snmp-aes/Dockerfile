@@ -15,8 +15,7 @@ RUN cd /tmp && apt source libsnmp40 && \
 FROM debian:bullseye
 RUN apt update && apt upgrade -y
 RUN apt-get install -y \
-    libwrap0-dev libssl-dev perl-xs-dev procps pkg-config \
-    libsensors-dev default-libmysqlclient-dev libpci-dev
+    devscripts build-essential lintian
 
 COPY --from=net-snmp-builder /tmp/net-snmp-5.9+dfsg/*.deb /tmp/
 

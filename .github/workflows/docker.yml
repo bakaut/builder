@@ -23,7 +23,7 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build temp net-snmp-aes image
+    - name: Build temp image
       run: |
         APP_NAME=net-snmp-aes
         BASE_IMAGE="$REGISTRY/$GITHUB_REPOSITORY/$APP_NAME"
