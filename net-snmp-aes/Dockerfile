@@ -13,7 +13,8 @@ RUN apt update && \
 RUN cd /tmp && apt source libsnmp40 && \
     cd net-snmp-5.9+dfsg/ && \
     sed -i '39a--enable-blumenthal-aes \\' debian/rules && \
-    debuild -us -uc
+    debuild -us -uc && \
+    ls -R
 
 FROM debian:bullseye
 RUN apt update && apt upgrade -y
