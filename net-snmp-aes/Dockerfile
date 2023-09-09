@@ -17,7 +17,8 @@ RUN cd /tmp && apt source libsnmp40 && \
 
 FROM debian:bullseye
 RUN apt update && apt upgrade -y
+RUN apt-get install -y libpci3 libwrap0 libperl5.32 libssl1.1
 
-COPY --from=net-snmp-builder /tmp/net-snmp-*.deb /tmp/
+COPY --from=net-snmp-builder /tmp/*.deb /tmp/
 
 RUN dpkg -i /tmp/*.deb
