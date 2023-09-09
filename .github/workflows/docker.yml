@@ -24,7 +24,6 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build temp net-snmp-aes image
-      if: ${{ env.IMAGE != 'exist' }}
       run: |
         APP_NAME=net-snmp-aes
         BASE_IMAGE="$REGISTRY/$GITHUB_REPOSITORY/$APP_NAME"
