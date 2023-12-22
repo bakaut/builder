@@ -13,12 +13,16 @@ RUN apt-get update && apt-get install -y \
     liblzma-dev \
     libarchive-dev \
     git \
+    autoconf \
+    automake \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src
-RUN git clone https://github.com/ionos-cloud/reprepro.git
+RUN git clone --branch multiple-versions-debian https://github.com/ionos-cloud/reprepro.git
 
+# Ensure you're in the correct directory where the Makefile exists
 WORKDIR /usr/src/reprepro
+RUN ./autogen.sh
 RUN make && make install
 
 RUN reprepro --version
