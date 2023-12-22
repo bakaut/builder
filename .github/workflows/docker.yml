@@ -25,7 +25,7 @@ jobs:
 
     - name: Build temp image
       run: |
-        APP_NAME=net-snmp-old
+        APP_NAME=reprepo
         BASE_IMAGE="$REGISTRY/$GITHUB_REPOSITORY/$APP_NAME"
         LATEST_IMAGE="$BASE_IMAGE:latest"
         cd $APP_NAME
