@@ -22,7 +22,7 @@ RUN git clone --branch multiple-versions-debian https://github.com/ionos-cloud/r
 
 # Ensure you're in the correct directory where the Makefile exists
 WORKDIR /usr/src/reprepro
-RUN ./autogen.sh
+RUN bash autogen.sh
 RUN make && make install
 
 RUN reprepro --version
