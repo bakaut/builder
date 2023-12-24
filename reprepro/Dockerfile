@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src
-RUN git clone --branch multiple-versions-debian https://github.com/ionos-cloud/reprepro.git
+RUN git clone --branch 5.3.0-1.3-multiple-versions https://github.com/ionos-cloud/reprepro.git
 
 # Ensure you're in the correct directory where the Makefile exists
 WORKDIR /usr/src/reprepro

@@ -3,6 +3,10 @@ on:
   push:
     branches:
     - 'main'
+env:
+  APP_NAME: 'reprepro'
+  TAG: '5.3.0-1.3'
+
 jobs:
   docker:
     runs-on: ubuntu-22.04
@@ -25,8 +29,16 @@ jobs:
 
     - name: Build temp image
       run: |
-        APP_NAME=reprepo
+        APP_NAME=reprepro
         BASE_IMAGE="$REGISTRY/$GITHUB_REPOSITORY/$APP_NAME"
         LATEST_IMAGE="$BASE_IMAGE:latest"
         cd $APP_NAME
         docker build . -t $LATEST_IMAGE
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ env.APP_NAME }}
+        file: ./Dockerfile
+        push: true
+        tags: ghcr.io/${{ github.repository }}/builder:${{ env.APP_NAME }}-${{ env.TAG }}-${{github.run_number}}
