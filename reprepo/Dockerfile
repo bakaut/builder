@@ -1,6 +1,6 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 as builder
 
-LABEL maintainer="yourname@example.com"
+LABEL maintainer="fifo.mail@gmail.com"
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -22,8 +22,27 @@ RUN git clone --branch multiple-versions-debian https://github.com/ionos-cloud/r
 
 # Ensure you're in the correct directory where the Makefile exists
 WORKDIR /usr/src/reprepro
-RUN bash autogen.sh
-RUN make && make install
+RUN sh ./configure && make && make install
+
+RUN ./reprepro --version
+
+# Stage 2: Final Stage
+FROM ubuntu:18.04
+
+LABEL maintainer="fifo.mail@gmail.com"
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libdb5.3 \
+    libgpgme11 \
+    zlib1g \
+    libbz2-1.0 \
+    liblzma5 \
+    libc6 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copy the built reprepro binary from the build stage
+COPY --from=builder /usr/src/reprepro/reprepro /usr/local/bin/reprepro
 
 RUN reprepro --version
 
