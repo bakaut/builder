@@ -4,8 +4,9 @@ on:
     branches:
     - 'main'
 env:
-  APP_NAME: glaber-debian-bullseye
+  APP_NAME: centos8
   TAG: 0.0.1
+  PUSH: 'false'
 
 jobs:
   docker:
@@ -35,5 +36,5 @@ jobs:
       with:
         context: "{{defaultContext}}:${{ env.APP_NAME }}"
         file: ./Dockerfile
-        push: true
+        push: ${{ env.PUSH == 'true' && true || false }}
         tags: ghcr.io/${{ github.repository }}/builder:${{ env.APP_NAME }}-${{ env.TAG }}-${{github.run_number}}
