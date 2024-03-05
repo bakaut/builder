@@ -3,15 +3,40 @@ on:
   push:
     branches:
     - 'main'
-env:
-  APP_NAME: centos9
-  TAG: 0.0.1
-  PUSH: 'false'
-
 jobs:
-  docker:
+  find-dockerfiles:
     runs-on: ubuntu-22.04
-    
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Find changed Dockerfiles
+        id: find-dockerfiles
+        run: |
+          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile')
+          echo "Changed Dockerfiles: $files"
+          echo "::set-output name=dockerfiles::${files}"
+
+      - name: Create JSON matrix for the strategy
+        id: set-matrix
+        run: |
+          dockerfiles="${{ steps.find-dockerfiles.outputs.dockerfiles }}"
+          json_matrix="{\"include\": ["
+          for file in $dockerfiles; do
+            dir=$(dirname $file)
+            json_matrix="$json_matrix {\"dockerfile\": \"$file\", \"context\": \"$dir\"},"
+          done
+          json_matrix="${json_matrix%,}]}"
+          echo "Matrix: $json_matrix"
+          echo "::set-output name=matrix::$json_matrix"
+  build-docker:
+    needs: find-dockerfiles
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.find-dockerfiles.outputs.matrix)}}   
     permissions:
       contents: read
       packages: write
@@ -19,7 +44,7 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
    
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -34,7 +59,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: "{{defaultContext}}:${{ env.APP_NAME }}"
-        file: ./Dockerfile
+        context: ${{ matrix.context }}
+        file: ${{ matrix.dockerfile }}
         push: ${{ env.PUSH == 'true' && true || false }}
-        tags: ghcr.io/${{ github.repository }}/builder:${{ env.APP_NAME }}-${{ env.TAG }}-${{github.run_number}}
+        tags: ghcr.io/${{ github.repository }}/${{ matrix.context }}:${{ github.sha }}
