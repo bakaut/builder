@@ -21,25 +21,25 @@ jobs:
           files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile' || echo "")
           echo "Changed Dockerfiles: $files"
           if [ -z "$files" ]; then
-            echo "::set-output name=has_changes::false"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=has_changes::true"
-            echo "::set-output name=dockerfiles::$files"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "dockerfiles=$files" >> $GITHUB_ENV
           fi
 
       - name: Set up job matrix
         if: steps.find-dockerfiles.outputs.has_changes == 'true'
         id: set-matrix
         run: |
-          dockerfiles="${{ steps.find-dockerfiles.outputs.dockerfiles }}"
-            json_matrix="{\"include\": ["
-            for file in $dockerfiles; do
-              context=$(dirname $file)
-              json_matrix="$json_matrix {\"dockerfile\": \"$file\", \"context\": \"$context\"},"
-            done
-            json_matrix="${json_matrix%,}]}"
-            echo "Matrix: $json_matrix"
-            echo "::set-output name=matrix::$json_matrix"
+          dockerfiles=$dockerfiles
+          json_matrix="{\"include\": ["
+          for file in $dockerfiles; do
+            context=$(dirname $file)
+            json_matrix="$json_matrix {\"dockerfile\": \"$file\", \"context\": \"$context\"},"
+          done
+          json_matrix="${json_matrix%,}]}"
+          echo "Matrix: $json_matrix"
+          echo "matrix=$json_matrix" >> $GITHUB_OUTPUT
 
   build-docker:
     needs: prepare-matrix
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.find-dockerfiles.outputs.matrix)}}   
+      matrix: ${{fromJson(needs.prepare-matrix.outputs.matrix)}}
     permissions:
       contents: read
       packages: write
@@ -68,7 +68,9 @@ jobs:
 
     - name: Extract directory name from Dockerfile path
       id: dirname
-      run: echo "::set-output name=dir::$(dirname ${{ matrix.dockerfile }} | xargs basename)"
+      run: |
+        dir=$(dirname ${{ matrix.dockerfile }} | xargs basename)
+        echo "dir=$dir" >> $GITHUB_ENV
 
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -76,4 +78,4 @@ jobs:
         context: ${{ matrix.context }}
         file: ${{ matrix.dockerfile }}
         push: true
-        tags: ghcr.io/${{ github.repository }}/${{ steps.dirname.outputs.dir }}:${{ github.sha }}
+        tags: ghcr.io/${{ github.repository }}/${{ env.dir }}:${{ github.sha }}
