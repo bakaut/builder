@@ -1,5 +1,5 @@
 FROM almalinux:8
-
+# 
 RUN dnf update -y && \
     dnf -y install dnf-plugins-core epel-release gcc-c++
 
