@@ -23,3 +23,4 @@ RUN GO_VER=1.20.5 && \
     rm go${GO_VER}.linux-amd64.tar.gz
 
 ENV PATH="/usr/local/go/bin:${PATH}"
+

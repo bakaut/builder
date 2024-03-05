@@ -24,7 +24,7 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "dockerfiles=$files" >> $GITHUB_ENV
+            echo "dockerfiles=[$files]" >> $GITHUB_ENV
           fi
 
       - name: Set up job matrix
