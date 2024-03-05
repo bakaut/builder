@@ -4,10 +4,11 @@ on:
     branches:
     - 'main'
 jobs:
-  find-dockerfiles:
+  prepare-matrix:
     runs-on: ubuntu-22.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      has_changes: ${{ steps.find-dockerfiles.outputs.has_changes }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -15,24 +16,32 @@ jobs:
       - name: Find changed Dockerfiles
         id: find-dockerfiles
         run: |
-          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile')
+          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile' || echo "")
           echo "Changed Dockerfiles: $files"
-          echo "::set-output name=dockerfiles::${files}"
+          if [ -z "$files" ]; then
+            echo "::set-output name=has_changes::false"
+          else
+            echo "::set-output name=has_changes::true"
+            echo "::set-output name=dockerfiles::$files"
+          fi
 
-      - name: Create JSON matrix for the strategy
+      - name: Set up job matrix
+        if: steps.find-dockerfiles.outputs.has_changes == 'true'
         id: set-matrix
         run: |
           dockerfiles="${{ steps.find-dockerfiles.outputs.dockerfiles }}"
-          json_matrix="{\"include\": ["
-          for file in $dockerfiles; do
-            dir=$(dirname $file)
-            json_matrix="$json_matrix {\"dockerfile\": \"$file\", \"context\": \"$dir\"},"
-          done
-          json_matrix="${json_matrix%,}]}"
-          echo "Matrix: $json_matrix"
-          echo "::set-output name=matrix::$json_matrix"
+            json_matrix="{\"include\": ["
+            for file in $dockerfiles; do
+              context=$(dirname $file)
+              json_matrix="$json_matrix {\"dockerfile\": \"$file\", \"context\": \"$context\"},"
+            done
+            json_matrix="${json_matrix%,}]}"
+            echo "Matrix: $json_matrix"
+            echo "::set-output name=matrix::$json_matrix"
+
   build-docker:
-    needs: find-dockerfiles
+    needs: prepare-matrix
+    if: needs.prepare-matrix.outputs.has_changes == 'true'
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -42,7 +51,6 @@ jobs:
       packages: write
     
     steps:
-
     - name: Checkout
       uses: actions/checkout@v4
    
@@ -56,10 +64,14 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Extract directory name from Dockerfile path
+      id: dirname
+      run: echo "::set-output name=dir::$(dirname ${{ matrix.dockerfile }} | xargs basename)"
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: ${{ matrix.context }}
         file: ${{ matrix.dockerfile }}
-        push: ${{ env.PUSH == 'true' && true || false }}
-        tags: ghcr.io/${{ github.repository }}/${{ matrix.context }}:${{ github.sha }}
+        push: true
+        tags: ghcr.io/${{ github.repository }}/${{ steps.dirname.outputs.dir }}:${{ github.sha }}
