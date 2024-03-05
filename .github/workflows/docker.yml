@@ -18,13 +18,13 @@ jobs:
       - name: Find changed Dockerfiles
         id: find-dockerfiles
         run: |
-          files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile' || echo "")
+          files=$(echo $(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'Dockerfile' || echo ""))
           echo "Changed Dockerfiles: $files"
           if [ -z "$files" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "dockerfiles=[$files]" >> $GITHUB_ENV
+            echo "dockerfiles=$files" >> $GITHUB_ENV
           fi
 
       - name: Set up job matrix
