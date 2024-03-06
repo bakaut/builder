@@ -46,6 +46,3 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /usr/src/reprepro/reprepro /usr/local/bin/reprepro
 
 RUN reprepro --version
-
-# Set a default command for the container (optional)
-CMD ["reprepro", "--version"]
