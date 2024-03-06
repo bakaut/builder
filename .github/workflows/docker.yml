@@ -62,7 +62,7 @@ jobs:
         dir=$(dirname ${{ matrix.dockerfile }} | xargs basename)
         echo "dir=$dir" >> $GITHUB_ENV
 
-    - name: Build Docker image
+    - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: ${{ matrix.context }}
