@@ -4,6 +4,7 @@ FROM ubuntu:bionic
 RUN apt-get update && apt-get install -y \
     cmake \
     make \
+    curl \
     gcc \
     libglib2.0-dev \
     libxml2-dev \
