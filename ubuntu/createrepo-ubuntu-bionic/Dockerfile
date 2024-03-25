@@ -1,18 +1,20 @@
 FROM ubuntu:bionic
 
-# Install build dependencies
+# Update and install dependencies
 RUN apt-get update && apt-get install -y \
+    bzip2 \
     cmake \
-    make \
-    libcurl4-openssl-dev \
-    gcc \
-    libglib2.0-dev \
-    libxml2-dev \
-    libssl-dev \
     libbz2-dev \
+    libglib2.0-dev \
+    libcurl4-openssl-dev \
+    libxml2-dev \
+    libpython3-dev \
+    librpm-dev \
+    libssl-dev \
+    libsqlite3-dev \
     liblzma-dev \
     zlib1g-dev \
-    rpm \
+    libzstd-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
