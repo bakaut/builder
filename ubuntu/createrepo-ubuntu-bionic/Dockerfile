@@ -18,6 +18,14 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+# Clone and build zck (Zchunk library)
+RUN git clone https://github.com/zchunk/zchunk.git && \
+    cd zchunk && \
+    ./autogen.sh && \
+    ./configure && \
+    make && \
+    make install
+
 # Clone the createrepo_c repository
 RUN git clone https://github.com/rpm-software-management/createrepo_c.git
 
