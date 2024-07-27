@@ -1,4 +1,5 @@
-FROM debian:bookworm
+FROM gcc:11 AS gcc
+FROM debian:bookworm AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -14,14 +15,12 @@ RUN apt-get -qq update && \
     libxml2-dev libpcre3-dev libevent-dev curl libssl-dev \
     lsb-release default-libmysqlclient-dev libssh-dev sass
 
-RUN wget -q https://ftp.gnu.org/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.gz && \
-    tar -xzf gcc-11.2.0.tar.gz && \
-    cd gcc-11.2.0 && \
-    ./contrib/download_prerequisites && \
-    mkdir ../gcc-build && cd ../gcc-build && \
-    ../gcc-11.2.0/configure --prefix=/usr/local/gcc-11.2.0 --enable-languages=c,c++ --disable-multilib && \
-    make -j8 -d && \
-    make install -d
+COPY --from=gcc /usr/local/bin/gcc /usr/local/bin/
+COPY --from=gcc /usr/local/bin/g++ /usr/local/bin/
+COPY --from=gcc /usr/local/bin/cpp /usr/local/bin/
+COPY --from=gcc /usr/local/lib /usr/local/lib
+COPY --from=gcc /usr/local/include /usr/local/include
+COPY --from=gcc /usr/local/share /usr/local/share
 
 RUN lsb_release -cs | grep bullseye && \
     apt-get install -y libmariadb-dev || true
@@ -34,7 +33,7 @@ RUN GO_VER=1.20.5 && \
     tar -C /usr/local -xzf go${GO_VER}.linux-amd64.tar.gz && \
     rm go${GO_VER}.linux-amd64.tar.gz
 
-ENV PATH="/usr/local/gcc-11.2.0/x86_64-pc-linux-gnu/bin/:/usr/local/go/bin:${PATH}"
+ENV PATH="/usr/local/bin:/usr/local/go/bin:${PATH}"
 
 RUN gcc --version && \
     g++ --version && \
