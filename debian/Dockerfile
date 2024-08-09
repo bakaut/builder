@@ -1,5 +1,4 @@
-FROM gcc:11 AS gcc
-FROM debian:bookworm AS base
+FROM debian:bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -15,15 +14,18 @@ RUN apt-get -qq update && \
     libxml2-dev libpcre3-dev libevent-dev curl libssl-dev \
     lsb-release default-libmysqlclient-dev libssh-dev sass
 
-COPY --from=gcc /usr/local/bin/gcc /usr/local/bin/
-COPY --from=gcc /usr/local/bin/g++ /usr/local/bin/
-COPY --from=gcc /usr/local/bin/cpp /usr/local/bin/
-COPY --from=gcc /usr/local/lib /usr/local/lib
-COPY --from=gcc /usr/local/include /usr/local/include
-COPY --from=gcc /usr/local/share /usr/local/share
-
-RUN lsb_release -cs | grep bullseye && \
-    apt-get install -y libmariadb-dev || true
+RUN git clone https://github.com/gcc-mirror/gcc.git && \
+    cd gcc && \
+    git checkout releases/gcc-12.2.0 && \
+    . ./contrib/download_prerequisites && \
+    cd .. && \
+    mkdir objdir && \
+    cd objdir && \
+    $PWD/../gcc-12.2.0/configure --prefix=$HOME/GCC-12.2.0 --enable-languages=c,c++,go && \
+    make -j && \
+    make install && \
+    ls -R $HOME/GCC-12.2.0 && \
+    $HOME/GCC-12.2.0/bin/gcc --version
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
