@@ -2,7 +2,7 @@
 FROM openjdk:8-jdk-alpine
 
 # Step 2: Install Maven
-RUN apk add --no-cache curl tar bash \
+RUN apk add --no-cache curl tar bash git \
     && mkdir -p /usr/share/maven \
     && curl -o /tmp/apache-maven-3.6.3-bin.tar.gz https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz \
     && tar xzf /tmp/apache-maven-3.6.3-bin.tar.gz -C /usr/share/maven --strip-components=1 \
