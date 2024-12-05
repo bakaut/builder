@@ -8,7 +8,7 @@ RUN apt-get -qq update && \
     libpcap-dev flex byacc libjson-c-dev \
     libunistring-dev dpkg-dev devscripts wget git gcc \
     automake dh-make build-essential autoconf autotools-dev \
-    quilt pkg-config libsnmp-dev libpq-dev libsqlite3-dev \
+    quilt pkg-config libpq-dev libsqlite3-dev \
     libcurl4-openssl-dev libldap2-dev libiksemel-dev \
     libopenipmi-dev libssh2-1-dev unixodbc-dev default-jdk \
     libxml2-dev libpcre3-dev libevent-dev curl libssl-dev \
@@ -21,7 +21,8 @@ RUN apt-get install -y wget libgdbm-compat4 libgdbm6 libpci3 libperl5.28 libsens
     wget https://glaber.io/repo/astra/pool/main/n/net-snmp/s1_libsnmp-base_5.9%2Bastra173.deb && \
     dpkg -i s1_libsnmp-base_5.9+astra173.deb && \
     wget https://glaber.io/repo/astra/pool/main/n/net-snmp/s2_libsnmp40_5.9%2Bastra173.deb && \
-    dpkg -i s2_libsnmp40_5.9+astra173.deb
+    dpkg -i s2_libsnmp40_5.9+astra173.deb && \
+    dpkg -l | grep libsnmp
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* s1_libsnmp-base_5.9+astra173.deb s2_libsnmp40_5.9+astra173.deb
 
