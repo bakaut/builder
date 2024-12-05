@@ -19,7 +19,7 @@ RUN lsb_release -cs | grep bullseye && \
 
 RUN wget -qO - https://glaber.io/repo/key/repo.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/glaber_repo.gpg && \
     echo "deb [arch=amd64] https://glaber.io/repo/astra 1.7.3 main" >> /etc/apt/sources.list.d/glaber.list && \
-    apt-get update && apt-get install -y s1_libsnmp-base s2_libsnmp40
+    apt-get update && apt-get install -y net-snmp
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
