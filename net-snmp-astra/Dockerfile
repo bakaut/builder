@@ -17,11 +17,13 @@ RUN apt-get -qq update && \
 RUN lsb_release -cs | grep bullseye && \
     apt-get install -y libmariadb-dev || true
 
-RUN wget -qO - https://glaber.io/repo/key/repo.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/glaber_repo.gpg && \
-    echo "deb [arch=amd64] https://glaber.io/repo/astra 1.7.3 main" >> /etc/apt/sources.list.d/glaber.list && \
-    apt-get update && apt-get install -y net-snmp
+RUN apt-get install -y wget libgdbm-compat4 libgdbm6 libpci3 libperl5.28 libsensors-config libsensors5 libwrap0 netbase perl perl-modules-5.28 && \
+    wget https://glaber.io/repo/astra/pool/main/n/net-snmp/s1_libsnmp-base_5.9%2Bastra173.deb && \
+    dpkg -i s1_libsnmp-base_5.9+astra173.deb && \
+    wget https://glaber.io/repo/astra/pool/main/n/net-snmp/s2_libsnmp40_5.9%2Bastra173.deb && \
+    dpkg -i s2_libsnmp40_5.9+astra173.deb
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* s1_libsnmp-base_5.9+astra173.deb s2_libsnmp40_5.9+astra173.deb
 
 RUN GO_VER=1.20.5 && \
     wget -q https://golang.org/dl/go${GO_VER}.linux-amd64.tar.gz && \
