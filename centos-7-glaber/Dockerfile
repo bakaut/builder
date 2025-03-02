@@ -1,0 +1,1 @@
+FROM registry.gitlab.com/glaber/builder/centos-7:latest
