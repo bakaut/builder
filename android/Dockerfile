@@ -49,9 +49,6 @@ RUN yes | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null; \
         "platforms;${ANDROID_PLATFORM}" \
         "build-tools;${ANDROID_BUILD_TOOLS}"
 
-RUN python3 -m pip install --no-cache-dir pipx==1.8.0 \
-    && pipx ensurepath
-
 RUN chown -R daytona:daytona "${ANDROID_SDK_ROOT}" /workspace /home/daytona
 
 USER daytona
