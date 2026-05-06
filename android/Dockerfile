@@ -42,7 +42,8 @@ RUN mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools" /workspace \
     && mv "${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools" "${ANDROID_SDK_ROOT}/cmdline-tools/latest" \
     && rm -f /tmp/cmdline-tools.zip
 
-RUN yes | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null \
+RUN yes | sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" --licenses >/dev/null; \
+    test "${PIPESTATUS[1]}" -eq 0 \
     && sdkmanager --sdk_root="${ANDROID_SDK_ROOT}" \
         "platform-tools" \
         "platforms;${ANDROID_PLATFORM}" \
