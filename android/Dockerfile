@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LC_ALL=C.UTF-8 \
     ANDROID_SDK_ROOT=/opt/android-sdk \
     ANDROID_HOME=/opt/android-sdk \
-    JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    JAVA_HOME=/usr/lib/jvm/default-java
 
 ENV PATH=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools:${PATH}
 
@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y \
     bash \
     ca-certificates \
     curl \
+    default-jdk \
     git \
-    openjdk-17-jdk \
     openssh-client \
     python3 \
     python3-pip \
