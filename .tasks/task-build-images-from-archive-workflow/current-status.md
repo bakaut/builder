@@ -67,16 +67,32 @@ Status: completed.
 
 Commit: `45c056fedecd9a2144708a6d9ce828b8691afcd9`.
 
-### 4.3 Push-triggered Actions run
+### 4.3 Push-triggered Actions run 1
 Status: failed.
 
 Run: `25541524895`.
 Event: `push`.
 Failure: runtime image build failed at `npm install -g` with `EACCES` for `/usr/local/lib/node_modules/@playwright`.
 
+### 4.4 Remediation commit 1
+Status: completed.
+
+Commit: `083cb36a1524ef884bd6404b6a3b538e320d4bf4`.
+Change: install npm global packages under `/home/daytona/.local` and include `/home/daytona/.local/lib/node_modules` in `NODE_PATH`.
+
+### 4.5 Push-triggered Actions run 2
+Status: failed.
+
+Run: `25541664268`.
+Event: `push`.
+Failure: Python Playwright and Node Playwright both attempted to own `/home/daytona/.local/bin/playwright`, causing npm `EEXIST`.
+
 ## 5. Remediation
 
 ### 5.1 npm prefix fix
+Status: completed.
+
+### 5.2 Playwright CLI collision fix
 Status: in_progress.
 
-Change runtime Dockerfile to install Node Playwright packages under `/home/daytona/.local` and include `/home/daytona/.local/lib/node_modules` in `NODE_PATH`.
+Keep the Python Playwright package for Python imports, remove only the Python `playwright` CLI wrapper before installing the Node Playwright CLI/test runner.

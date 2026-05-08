@@ -90,12 +90,13 @@ USER ${USERNAME}
 WORKDIR /home/${USERNAME}/workspace
 
 # Install uv, pytest, Python Playwright, and Node Playwright CLI/test runner.
-# npm global installs use a user-owned prefix so the final image remains non-root by default.
+# Python and Node Playwright both provide a `playwright` binary; keep the npm CLI for `npx playwright` smoke.
 RUN npm config set prefix /home/${USERNAME}/.local \
  && python -m pip install --user --no-cache-dir \
       uv \
       pytest \
       playwright \
+ && rm -f /home/${USERNAME}/.local/bin/playwright \
  && npm install -g --no-audit --no-fund \
       playwright \
       @playwright/test
