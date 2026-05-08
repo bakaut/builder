@@ -113,6 +113,26 @@ Run: `25541997145`.
 Event: `push`.
 Failure: local Docker build made runtime build-time Chromium/Playwright smoke unstable; Chromium exited with `SIGSEGV` during Python Playwright launch.
 
+### 4.10 Remediation commit 4
+Status: completed.
+
+Commit: `3e50106079131f5ba7132ea8aedfedced5e3ad84`.
+Change: split builder strategy. Runtime image builds with `docker buildx build --load`; DinD image builds with local `DOCKER_BUILDKIT=1 docker build` so it can use the local `daytona-runtime:ci` base image.
+
+### 4.11 Push-triggered Actions run 5
+Status: completed.
+
+Run: `25542143570`.
+Event: `push`.
+Head SHA: `3e50106079131f5ba7132ea8aedfedced5e3ad84`.
+Conclusion: `success`.
+
+Successful steps:
+- `Build runtime image`
+- `Smoke runtime image`
+- `Build DinD image`
+- `Smoke DinD image`
+
 ## 5. Remediation
 
 ### 5.1 npm prefix fix
@@ -127,6 +147,20 @@ Status: revised.
 Full local Docker build fixed DinD base visibility but regressed runtime smoke stability.
 
 ### 5.4 Split builder strategy
-Status: in_progress.
+Status: completed.
 
-Use `docker buildx build --load` for the runtime image, which previously built and smoke-tested successfully, then use local `DOCKER_BUILDKIT=1 docker build` only for the DinD image so `FROM daytona-runtime:ci` resolves from the runner local image store.
+Use `docker buildx build --load` for the runtime image, which builds and smoke-tests successfully, then use local `DOCKER_BUILDKIT=1 docker build` only for the DinD image so `FROM daytona-runtime:ci` resolves from the runner local image store.
+
+## 6. Readiness
+
+### 6.1 Current readiness
+Status: ready for review.
+
+The branch has a push-triggered workflow that has successfully built and smoke-tested both runtime and DinD images in GitHub Actions.
+
+### 6.2 Remaining risks
+Status: tracked.
+
+- Images are validated but not published to a registry in this slice.
+- Workflow currently targets `linux/amd64` only.
+- The workflow includes `pull_request` trigger in addition to `push`; manual `workflow_dispatch` is not used.
