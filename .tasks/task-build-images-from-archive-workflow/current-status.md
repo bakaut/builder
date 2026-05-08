@@ -249,26 +249,53 @@ The runtime image must precreate Daytona helper binary mountpoints before the sa
 - `/usr/local/bin/.tmp/binaries/daytona-computer-use`
 
 ### 8.3 Implementation
-Status: in_progress.
+Status: completed.
 
-`Dockerfile.runtime` now precreates the mountpoint directory and placeholder file. `smoke-runtime.sh` now asserts those paths exist and are writable before browser checks.
+Commit: `d6f1b91c6f90e82a5f615cbf7cce449138630103`.
+
+`Dockerfile.runtime` precreates the mountpoint directory and placeholder file. `smoke-runtime.sh` asserts those paths exist and are writable before browser checks.
 
 ### 8.4 Push-triggered validation run
-Status: pending.
+Status: completed.
 
-Expected trigger commit message: `fix: precreate Daytona computer-use mount points`.
+Run: `25544206782`.
+Event: `push`.
+Head SHA: `d6f1b91c6f90e82a5f615cbf7cce449138630103`.
+Conclusion: `success`.
+
+Successful validation steps:
+- `Build runtime image`
+- `Smoke runtime image`
+- `Build DinD image`
+- `Smoke DinD image`
+- `Login to GHCR`
+- `Push linux/amd64 image tags`
+- `Verify published image tags`
+
+### 8.5 Published tags after mountpoint fix
+Status: completed.
+
+Runtime image tags:
+- `ghcr.io/bakaut/daytona-runtime:linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime:sha-d6f1b91c6f90-linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime:chatgpt-build-daytona-minimal-images-linux-amd64`
+
+DinD image tags:
+- `ghcr.io/bakaut/daytona-runtime-dind:linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime-dind:sha-d6f1b91c6f90-linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime-dind:chatgpt-build-daytona-minimal-images-linux-amd64`
 
 ## 9. Final readiness
 
 ### 9.1 Current readiness
-Status: pending.
+Status: ready for Daytona runtime verification.
 
-The branch must pass a new push-triggered workflow run and publish new GHCR tags after the Daytona mountpoint fix.
+The branch has a push-triggered workflow that successfully builds, smoke-tests, publishes, and verifies linux/amd64 runtime and DinD image tags in GHCR after adding the Daytona helper binary mountpoint contract.
 
 ### 9.2 Remaining risks
 Status: tracked.
 
-- The CI verifies the mountpoint contract, but the real Daytona host mount source and destination are controlled by Daytona runtime.
+- CI verifies the image-side mountpoint contract, but the real Daytona host mount source and final destination are controlled by Daytona runtime.
 - If Daytona mounts a directory instead of a file at the same path, a separate adjustment may be required.
 - Multi-arch publishing is not included; this slice publishes linux/amd64 only.
 - Tag `linux-amd64` is mutable and points to the latest successful push on the branch or main.
