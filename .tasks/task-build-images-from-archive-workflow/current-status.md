@@ -100,6 +100,19 @@ Run: `25541792748`.
 Event: `push`.
 Result: runtime image build passed and `smoke-runtime` passed. DinD build failed because buildx with the docker-container driver did not see the local `daytona-runtime:ci` image and tried to pull `docker.io/library/daytona-runtime:ci`.
 
+### 4.8 Remediation commit 3
+Status: completed.
+
+Commit: `d9c897a95c8e7783180a3a286a62332394658229`.
+Change: switched both builds to local `DOCKER_BUILDKIT=1 docker build`.
+
+### 4.9 Push-triggered Actions run 4
+Status: failed.
+
+Run: `25541997145`.
+Event: `push`.
+Failure: local Docker build made runtime build-time Chromium/Playwright smoke unstable; Chromium exited with `SIGSEGV` during Python Playwright launch.
+
 ## 5. Remediation
 
 ### 5.1 npm prefix fix
@@ -109,6 +122,11 @@ Status: completed.
 Status: completed.
 
 ### 5.3 Local runtime image visibility fix
+Status: revised.
+
+Full local Docker build fixed DinD base visibility but regressed runtime smoke stability.
+
+### 5.4 Split builder strategy
 Status: in_progress.
 
-Change workflow to use `DOCKER_BUILDKIT=1 docker build` against the local Docker daemon for both images, so `FROM daytona-runtime:ci` resolves from the runner local image store during the DinD build.
+Use `docker buildx build --load` for the runtime image, which previously built and smoke-tested successfully, then use local `DOCKER_BUILDKIT=1 docker build` only for the DinD image so `FROM daytona-runtime:ci` resolves from the runner local image store.
