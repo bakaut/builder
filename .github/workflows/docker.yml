@@ -75,4 +75,4 @@ jobs:
         context: ${{ matrix.context }}
         file: ${{ matrix.dockerfile }}
         push: true
-        tags: ghcr.io/${{ github.repository }}/${{ env.dir }}
+        tags: ghcr.io/${{ github.repository }}/${{ env.dir }}:tag
