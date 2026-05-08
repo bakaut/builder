@@ -164,3 +164,37 @@ Status: tracked.
 - Images are validated but not published to a registry in this slice.
 - Workflow currently targets `linux/amd64` only.
 - The workflow includes `pull_request` trigger in addition to `push`; manual `workflow_dispatch` is not used.
+
+## 7. Publish linux/amd64 images
+
+### 7.1 Publish target
+Status: completed.
+
+Registry target is GHCR.
+
+Runtime image target:
+- `ghcr.io/bakaut/daytona-runtime`
+
+DinD image target:
+- `ghcr.io/bakaut/daytona-runtime-dind`
+
+### 7.2 Publish tag contract
+Status: completed.
+
+For each image, the workflow publishes linux/amd64 tags:
+- `linux-amd64`
+- `sha-<12-char-sha>-linux-amd64`
+- `<sanitized-branch-name>-linux-amd64`
+
+For branch `chatgpt/build-daytona-minimal-images`, the branch tag suffix is expected to be:
+- `chatgpt-build-daytona-minimal-images-linux-amd64`
+
+### 7.3 Workflow publish update
+Status: in_progress.
+
+Workflow now performs build, smoke, GHCR login, push of linux/amd64 tags, and remote tag verification with `docker buildx imagetools inspect`.
+
+### 7.4 Push-triggered publish run
+Status: pending.
+
+Expected trigger commit message: `ci: publish Daytona minimal linux amd64 images to GHCR`.

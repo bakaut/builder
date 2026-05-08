@@ -15,20 +15,22 @@ name: Build Daytona minimal images
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: daytona-minimal-images-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-smoke:
-    name: Build and smoke-test runtime and DinD images
+  build-smoke-and-publish:
+    name: Build, smoke-test, and publish runtime and DinD images
     runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     env:
       IMAGE_PREFIX: daytona-runtime
       PLATFORM: linux/amd64
+      REGISTRY: ghcr.io
 
     steps:
       - name: Checkout
@@ -46,6 +48,26 @@ jobs:
           test -x daytona-minimal/scripts/smoke-runtime.sh || chmod +x daytona-minimal/scripts/smoke-runtime.sh
           test -x daytona-minimal/scripts/smoke-dind.sh || chmod +x daytona-minimal/scripts/smoke-dind.sh
           test -x daytona-minimal/scripts/dind-entrypoint.sh || chmod +x daytona-minimal/scripts/dind-entrypoint.sh
+
+      - name: Prepare linux/amd64 image tags
+        id: tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          owner_lc="$(printf '%s' "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          ref_tag="$(printf '%s' "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_.-]+/-/g; s/^-+//; s/-+$//')"
+          short_sha="${GITHUB_SHA::12}"
+          runtime_image="${REGISTRY}/${owner_lc}/daytona-runtime"
+          dind_image="${REGISTRY}/${owner_lc}/daytona-runtime-dind"
+          {
+            echo "runtime_image=${runtime_image}"
+            echo "dind_image=${dind_image}"
+            echo "ref_tag=${ref_tag}"
+            echo "short_sha=${short_sha}"
+          } >> "${GITHUB_OUTPUT}"
+          printf 'Runtime image: %s\n' "${runtime_image}"
+          printf 'DinD image: %s\n' "${dind_image}"
+          printf 'Tags: linux-amd64, sha-%s-linux-amd64, %s-linux-amd64\n' "${short_sha}" "${ref_tag}"
 
       - name: Build runtime image
         shell: bash
@@ -85,3 +107,53 @@ jobs:
             --group-add "$(stat -c '%g' /var/run/docker.sock)" \
             -v /var/run/docker.sock:/var/run/docker.sock \
             "${IMAGE_PREFIX}-dind:ci" smoke-dind
+
+      - name: Login to GHCR
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "${{ github.token }}" | docker login "${REGISTRY}" -u "${{ github.actor }}" --password-stdin
+
+      - name: Push linux/amd64 image tags
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          RUNTIME_IMAGE: ${{ steps.tags.outputs.runtime_image }}
+          DIND_IMAGE: ${{ steps.tags.outputs.dind_image }}
+          REF_TAG: ${{ steps.tags.outputs.ref_tag }}
+          SHORT_SHA: ${{ steps.tags.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          runtime_tags=(
+            "${RUNTIME_IMAGE}:linux-amd64"
+            "${RUNTIME_IMAGE}:sha-${SHORT_SHA}-linux-amd64"
+            "${RUNTIME_IMAGE}:${REF_TAG}-linux-amd64"
+          )
+          dind_tags=(
+            "${DIND_IMAGE}:linux-amd64"
+            "${DIND_IMAGE}:sha-${SHORT_SHA}-linux-amd64"
+            "${DIND_IMAGE}:${REF_TAG}-linux-amd64"
+          )
+
+          for tag in "${runtime_tags[@]}"; do
+            docker tag "${IMAGE_PREFIX}:ci" "${tag}"
+            docker push "${tag}"
+          done
+
+          for tag in "${dind_tags[@]}"; do
+            docker tag "${IMAGE_PREFIX}-dind:ci" "${tag}"
+            docker push "${tag}"
+          done
+
+      - name: Verify published image tags
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          RUNTIME_IMAGE: ${{ steps.tags.outputs.runtime_image }}
+          DIND_IMAGE: ${{ steps.tags.outputs.dind_image }}
+          SHORT_SHA: ${{ steps.tags.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "${RUNTIME_IMAGE}:sha-${SHORT_SHA}-linux-amd64"
+          docker buildx imagetools inspect "${DIND_IMAGE}:sha-${SHORT_SHA}-linux-amd64"
