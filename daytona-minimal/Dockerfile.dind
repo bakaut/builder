@@ -1,0 +1,56 @@
+# syntax=docker/dockerfile:1.7
+
+# Build this after Dockerfile.runtime, or pass a registry image here.
+ARG BASE_IMAGE=daytona-runtime:local
+FROM ${BASE_IMAGE}
+
+ARG USERNAME=daytona
+ARG DEBIAN_VERSION=bookworm
+
+USER root
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV DOCKER_HOST=unix:///var/run/docker.sock \
+    DOCKER_TLS_CERTDIR= \
+    DOCKER_BUILDKIT=1 \
+    COMPOSE_DOCKER_CLI_BUILD=1
+
+# Docker Engine + CLI inside the sandbox for privileged DinD e2e jobs.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      gnupg \
+      iproute2 \
+      iptables \
+      fuse-overlayfs \
+      uidmap \
+      slirp4netns \
+      procps \
+      xz-utils \
+ && install -m 0755 -d /etc/apt/keyrings \
+ && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+ && chmod a+r /etc/apt/keyrings/docker.asc \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian ${DEBIAN_VERSION} stable" \
+      > /etc/apt/sources.list.d/docker.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      docker-ce \
+      docker-ce-cli \
+      containerd.io \
+      docker-buildx-plugin \
+      docker-compose-plugin \
+      docker-ce-rootless-extras \
+ && usermod -aG docker ${USERNAME} \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY scripts/dind-entrypoint.sh /usr/local/bin/dind-entrypoint
+COPY scripts/smoke-dind.sh /usr/local/bin/smoke-dind
+
+RUN chmod +x /usr/local/bin/dind-entrypoint /usr/local/bin/smoke-dind
+
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}/workspace
+
+ENTRYPOINT ["tini", "--", "dind-entrypoint"]
+CMD ["sleep", "infinity"]

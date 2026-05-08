@@ -1,0 +1,88 @@
+"on":
+  push:
+    branches:
+      - main
+      - "chatgpt/**"
+    paths:
+      - "daytona-minimal/**"
+      - ".github/workflows/daytona-minimal-images.yml"
+  pull_request:
+    paths:
+      - "daytona-minimal/**"
+      - ".github/workflows/daytona-minimal-images.yml"
+
+name: Build Daytona minimal images
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daytona-minimal-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-smoke:
+    name: Build and smoke-test runtime and DinD images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+
+    env:
+      IMAGE_PREFIX: daytona-runtime
+      PLATFORM: linux/amd64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify image sources are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f daytona-minimal/Dockerfile.runtime
+          test -f daytona-minimal/Dockerfile.dind
+          test -x daytona-minimal/scripts/smoke-runtime.sh || chmod +x daytona-minimal/scripts/smoke-runtime.sh
+          test -x daytona-minimal/scripts/smoke-dind.sh || chmod +x daytona-minimal/scripts/smoke-dind.sh
+          test -x daytona-minimal/scripts/dind-entrypoint.sh || chmod +x daytona-minimal/scripts/dind-entrypoint.sh
+
+      - name: Build runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --load \
+            --platform "${PLATFORM}" \
+            -t "${IMAGE_PREFIX}:ci" \
+            -f daytona-minimal/Dockerfile.runtime \
+            daytona-minimal
+
+      - name: Smoke runtime image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm "${IMAGE_PREFIX}:ci" smoke-runtime
+
+      - name: Build DinD image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker buildx build \
+            --load \
+            --platform "${PLATFORM}" \
+            --build-arg BASE_IMAGE="${IMAGE_PREFIX}:ci" \
+            -t "${IMAGE_PREFIX}-dind:ci" \
+            -f daytona-minimal/Dockerfile.dind \
+            daytona-minimal
+
+      - name: Smoke DinD image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --privileged "${IMAGE_PREFIX}-dind:ci" smoke-dind || \
+          docker run --rm \
+            -e START_DOCKERD=0 \
+            --group-add "$(stat -c '%g' /var/run/docker.sock)" \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            "${IMAGE_PREFIX}-dind:ci" smoke-dind

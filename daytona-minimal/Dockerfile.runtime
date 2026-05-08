@@ -1,0 +1,122 @@
+# syntax=docker/dockerfile:1.7
+
+ARG DEBIAN_VERSION=bookworm
+ARG PYTHON_VERSION=3.12
+ARG NODE_VERSION=24.15.0
+# Prefer minor tag here unless you have verified the exact patch tag exists for linux/bookworm.
+ARG GO_VERSION=1.26
+ARG NVM_VERSION=v0.40.3
+
+FROM node:${NODE_VERSION}-${DEBIAN_VERSION}-slim AS node
+FROM golang:${GO_VERSION}-${DEBIAN_VERSION} AS go
+
+FROM python:${PYTHON_VERSION}-slim-${DEBIAN_VERSION}
+
+ARG USERNAME=daytona
+ARG USER_UID=1000
+ARG USER_GID=1000
+ARG NVM_VERSION=v0.40.3
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    GOPATH=/home/daytona/go \
+    GOMODCACHE=/home/daytona/go/pkg/mod \
+    PATH=/usr/local/go/bin:/home/daytona/go/bin:/home/daytona/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH \
+    NODE_PATH=/usr/local/lib/node_modules \
+    CHROMIUM_PATH=/usr/bin/chromium \
+    CHROME_BIN=/usr/bin/chromium \
+    PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    NVM_DIR=/home/daytona/.nvm \
+    BASH_ENV=/home/daytona/.bash_env \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8
+
+# Node runtime from official node image.
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+
+RUN ln -sf /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+ && ln -sf /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+# Go runtime from official golang image.
+COPY --from=go /usr/local/go /usr/local/go
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      git \
+      openssh-client \
+      sudo \
+      bash \
+      tini \
+      locales \
+      chromium \
+      xvfb \
+      fonts-liberation \
+      fonts-dejavu-core \
+      libnss3 \
+      libatk-bridge2.0-0 \
+      libgtk-3-0 \
+      libgbm1 \
+      libasound2 \
+      libxss1 \
+      libx11-xcb1 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxrandr2 \
+      libxshmfence1 \
+ && sed -i 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen \
+ && locale-gen en_US.UTF-8 \
+ && rm -rf /var/lib/apt/lists/*
+
+# Create the Daytona user and configure sudo access.
+RUN groupadd --gid ${USER_GID} ${USERNAME} \
+ && useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} \
+ && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/91-${USERNAME} \
+ && chmod 0440 /etc/sudoers.d/91-${USERNAME} \
+ && mkdir -p /home/${USERNAME}/workspace /workspaces \
+ && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME} /workspaces
+
+# Create directory for computer-use plugins without making all of /usr/local/lib mutable.
+RUN mkdir -p /usr/local/lib/daytona-computer-use \
+ && chown -R ${USERNAME}:${USERNAME} /usr/local/lib/daytona-computer-use
+
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}/workspace
+
+# Install uv, pytest, Python Playwright, and Node Playwright CLI/test runner.
+RUN python -m pip install --user --no-cache-dir \
+      uv \
+      pytest \
+      playwright \
+ && npm install -g --no-audit --no-fund \
+      playwright \
+      @playwright/test
+
+# Install nvm for the Daytona user. Node itself remains the compact /usr/local copy,
+# while nvm is available for ad-hoc Node version switching.
+RUN touch "${BASH_ENV}" \
+ && printf '%s\n' \
+      'export NVM_DIR="$HOME/.nvm"' \
+      '[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"' \
+      > "${BASH_ENV}" \
+ && printf '%s\n' 'source "$HOME/.bash_env"' >> /home/${USERNAME}/.bashrc \
+ && curl -fsSL "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash \
+ && bash -lc 'nvm --version'
+
+COPY --chown=${USERNAME}:${USERNAME} scripts/smoke-runtime.sh /usr/local/bin/smoke-runtime
+
+USER root
+RUN chmod +x /usr/local/bin/smoke-runtime
+USER ${USERNAME}
+
+# Build-time smoke check: Python, Go, Node, Chromium, Python Playwright, Node Playwright.
+RUN /usr/local/bin/smoke-runtime
+
+ENTRYPOINT ["tini", "--"]
+CMD ["sleep", "infinity"]
