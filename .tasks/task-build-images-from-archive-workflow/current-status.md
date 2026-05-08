@@ -161,7 +161,6 @@ The branch has a push-triggered workflow that has successfully built and smoke-t
 ### 6.2 Remaining risks
 Status: tracked.
 
-- Images are validated but not published to a registry in this slice.
 - Workflow currently targets `linux/amd64` only.
 - The workflow includes `pull_request` trigger in addition to `push`; manual `workflow_dispatch` is not used.
 
@@ -186,15 +185,62 @@ For each image, the workflow publishes linux/amd64 tags:
 - `sha-<12-char-sha>-linux-amd64`
 - `<sanitized-branch-name>-linux-amd64`
 
-For branch `chatgpt/build-daytona-minimal-images`, the branch tag suffix is expected to be:
+For branch `chatgpt/build-daytona-minimal-images`, the branch tag suffix is:
 - `chatgpt-build-daytona-minimal-images-linux-amd64`
 
 ### 7.3 Workflow publish update
-Status: in_progress.
+Status: completed.
 
-Workflow now performs build, smoke, GHCR login, push of linux/amd64 tags, and remote tag verification with `docker buildx imagetools inspect`.
+Commit: `b022f0d8432a46edafa9fba188549796d0d24b3a`.
+
+Workflow now performs:
+- build runtime image
+- smoke runtime image
+- build DinD image
+- smoke DinD image
+- GHCR login
+- push linux/amd64 tags
+- remote tag verification with `docker buildx imagetools inspect`
 
 ### 7.4 Push-triggered publish run
-Status: pending.
+Status: completed.
 
-Expected trigger commit message: `ci: publish Daytona minimal linux amd64 images to GHCR`.
+Run: `25542767976`.
+Event: `push`.
+Head SHA: `b022f0d8432a46edafa9fba188549796d0d24b3a`.
+Conclusion: `success`.
+
+Successful publish run steps:
+- `Build runtime image`
+- `Smoke runtime image`
+- `Build DinD image`
+- `Smoke DinD image`
+- `Login to GHCR`
+- `Push linux/amd64 image tags`
+- `Verify published image tags`
+
+### 7.5 Published tags
+Status: completed.
+
+Runtime image tags:
+- `ghcr.io/bakaut/daytona-runtime:linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime:sha-b022f0d8432a-linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime:chatgpt-build-daytona-minimal-images-linux-amd64`
+
+DinD image tags:
+- `ghcr.io/bakaut/daytona-runtime-dind:linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime-dind:sha-b022f0d8432a-linux-amd64`
+- `ghcr.io/bakaut/daytona-runtime-dind:chatgpt-build-daytona-minimal-images-linux-amd64`
+
+## 8. Final readiness
+
+### 8.1 Current readiness
+Status: ready for review.
+
+The branch has a push-triggered workflow that successfully builds, smoke-tests, publishes, and verifies linux/amd64 runtime and DinD image tags in GHCR.
+
+### 8.2 Remaining risks
+Status: tracked.
+
+- Multi-arch publishing is not included; this slice publishes linux/amd64 only.
+- Tag `linux-amd64` is mutable and points to the latest successful push on the branch or main.
