@@ -12,6 +12,14 @@ go version
 chromium --version
 bash -lc 'nvm --version'
 
+# Daytona injects helper binaries before sandbox user process startup. The OCI
+# runtime requires the target path to exist in the image rootfs for stable file
+# bind mounts.
+test -d /usr/local/bin/.tmp
+test -d /usr/local/bin/.tmp/binaries
+test -f /usr/local/bin/.tmp/binaries/daytona-computer-use
+test -w /usr/local/bin/.tmp/binaries
+
 chromium \
   --headless=new \
   --no-sandbox \

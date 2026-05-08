@@ -82,8 +82,14 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
  && mkdir -p /home/${USERNAME}/workspace /workspaces /home/${USERNAME}/.local \
  && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME} /workspaces
 
-# Create directory for computer-use plugins without making all of /usr/local/lib mutable.
-RUN mkdir -p /usr/local/lib/daytona-computer-use \
+# Daytona mounts helper binaries such as daytona-computer-use under this path
+# before the user process starts. Precreate both directory and file mountpoints
+# so OCI/runc can bind-mount over them during sandbox startup.
+RUN mkdir -p /usr/local/bin/.tmp/binaries /usr/local/lib/daytona-computer-use \
+ && touch /usr/local/bin/.tmp/binaries/daytona-computer-use \
+ && chmod 1777 /usr/local/bin/.tmp /usr/local/bin/.tmp/binaries \
+ && chmod 0755 /usr/local/bin/.tmp/binaries/daytona-computer-use \
+ && chown -R root:root /usr/local/bin/.tmp \
  && chown -R ${USERNAME}:${USERNAME} /usr/local/lib/daytona-computer-use
 
 USER ${USERNAME}
@@ -118,7 +124,8 @@ USER root
 RUN chmod +x /usr/local/bin/smoke-runtime
 USER ${USERNAME}
 
-# Build-time smoke check: Python, Go, Node, Chromium, Python Playwright, Node Playwright.
+# Build-time smoke check: Python, Go, Node, Chromium, Python Playwright, Node Playwright,
+# and Daytona helper mountpoint compatibility.
 RUN /usr/local/bin/smoke-runtime
 
 ENTRYPOINT ["tini", "--"]

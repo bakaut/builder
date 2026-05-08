@@ -232,15 +232,43 @@ DinD image tags:
 - `ghcr.io/bakaut/daytona-runtime-dind:sha-b022f0d8432a-linux-amd64`
 - `ghcr.io/bakaut/daytona-runtime-dind:chatgpt-build-daytona-minimal-images-linux-amd64`
 
-## 8. Final readiness
+## 8. Daytona sandbox runtime compatibility
 
-### 8.1 Current readiness
-Status: ready for review.
+### 8.1 Failure report
+Status: received.
 
-The branch has a push-triggered workflow that successfully builds, smoke-tests, publishes, and verifies linux/amd64 runtime and DinD image tags in GHCR.
+Reported sandbox startup failure:
+- `Sandbox failed to start: Error response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error mounting "/usr/local/bin/.tmp/binaries/daytona-computer-use" to rootfs ...`
 
-### 8.2 Remaining risks
+### 8.2 Contract update
+Status: completed.
+
+The runtime image must precreate Daytona helper binary mountpoints before the sandbox user process starts:
+- `/usr/local/bin/.tmp`
+- `/usr/local/bin/.tmp/binaries`
+- `/usr/local/bin/.tmp/binaries/daytona-computer-use`
+
+### 8.3 Implementation
+Status: in_progress.
+
+`Dockerfile.runtime` now precreates the mountpoint directory and placeholder file. `smoke-runtime.sh` now asserts those paths exist and are writable before browser checks.
+
+### 8.4 Push-triggered validation run
+Status: pending.
+
+Expected trigger commit message: `fix: precreate Daytona computer-use mount points`.
+
+## 9. Final readiness
+
+### 9.1 Current readiness
+Status: pending.
+
+The branch must pass a new push-triggered workflow run and publish new GHCR tags after the Daytona mountpoint fix.
+
+### 9.2 Remaining risks
 Status: tracked.
 
+- The CI verifies the mountpoint contract, but the real Daytona host mount source and destination are controlled by Daytona runtime.
+- If Daytona mounts a directory instead of a file at the same path, a separate adjustment may be required.
 - Multi-arch publishing is not included; this slice publishes linux/amd64 only.
 - Tag `linux-amd64` is mutable and points to the latest successful push on the branch or main.
