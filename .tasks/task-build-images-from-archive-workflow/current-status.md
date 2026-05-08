@@ -87,12 +87,28 @@ Run: `25541664268`.
 Event: `push`.
 Failure: Python Playwright and Node Playwright both attempted to own `/home/daytona/.local/bin/playwright`, causing npm `EEXIST`.
 
+### 4.6 Remediation commit 2
+Status: completed.
+
+Commit: `d6da1f76ac61d99ece33f5ace3923453d23e3914`.
+Change: keep Python Playwright package, remove only its CLI wrapper before installing Node Playwright CLI/test runner.
+
+### 4.7 Push-triggered Actions run 3
+Status: failed.
+
+Run: `25541792748`.
+Event: `push`.
+Result: runtime image build passed and `smoke-runtime` passed. DinD build failed because buildx with the docker-container driver did not see the local `daytona-runtime:ci` image and tried to pull `docker.io/library/daytona-runtime:ci`.
+
 ## 5. Remediation
 
 ### 5.1 npm prefix fix
 Status: completed.
 
 ### 5.2 Playwright CLI collision fix
+Status: completed.
+
+### 5.3 Local runtime image visibility fix
 Status: in_progress.
 
-Keep the Python Playwright package for Python imports, remove only the Python `playwright` CLI wrapper before installing the Node Playwright CLI/test runner.
+Change workflow to use `DOCKER_BUILDKIT=1 docker build` against the local Docker daemon for both images, so `FROM daytona-runtime:ci` resolves from the runner local image store during the DinD build.

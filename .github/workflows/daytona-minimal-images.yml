@@ -34,9 +34,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Verify image sources are present
         shell: bash
         run: |
@@ -51,8 +48,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker buildx build \
-            --load \
+          DOCKER_BUILDKIT=1 docker build \
             --platform "${PLATFORM}" \
             -t "${IMAGE_PREFIX}:ci" \
             -f daytona-minimal/Dockerfile.runtime \
@@ -68,8 +64,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker buildx build \
-            --load \
+          DOCKER_BUILDKIT=1 docker build \
             --platform "${PLATFORM}" \
             --build-arg BASE_IMAGE="${IMAGE_PREFIX}:ci" \
             -t "${IMAGE_PREFIX}-dind:ci" \
