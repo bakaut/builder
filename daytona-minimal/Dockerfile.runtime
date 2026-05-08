@@ -26,7 +26,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     GOPATH=/home/daytona/go \
     GOMODCACHE=/home/daytona/go/pkg/mod \
     PATH=/usr/local/go/bin:/home/daytona/go/bin:/home/daytona/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH \
-    NODE_PATH=/usr/local/lib/node_modules \
+    NODE_PATH=/home/daytona/.local/lib/node_modules:/usr/local/lib/node_modules \
     CHROMIUM_PATH=/usr/bin/chromium \
     CHROME_BIN=/usr/bin/chromium \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
@@ -79,7 +79,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
  && useradd --uid ${USER_UID} --gid ${USER_GID} -m -s /bin/bash ${USERNAME} \
  && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/91-${USERNAME} \
  && chmod 0440 /etc/sudoers.d/91-${USERNAME} \
- && mkdir -p /home/${USERNAME}/workspace /workspaces \
+ && mkdir -p /home/${USERNAME}/workspace /workspaces /home/${USERNAME}/.local \
  && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME} /workspaces
 
 # Create directory for computer-use plugins without making all of /usr/local/lib mutable.
@@ -90,7 +90,9 @@ USER ${USERNAME}
 WORKDIR /home/${USERNAME}/workspace
 
 # Install uv, pytest, Python Playwright, and Node Playwright CLI/test runner.
-RUN python -m pip install --user --no-cache-dir \
+# npm global installs use a user-owned prefix so the final image remains non-root by default.
+RUN npm config set prefix /home/${USERNAME}/.local \
+ && python -m pip install --user --no-cache-dir \
       uv \
       pytest \
       playwright \

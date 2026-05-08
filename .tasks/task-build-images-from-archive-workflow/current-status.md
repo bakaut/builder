@@ -38,7 +38,7 @@ Status: completed.
 - Dockerfile-to-script reference check.
 - GitHub Actions runtime build/smoke check on push.
 
-## 3. Local static validation
+## 3. Static validation
 
 ### 3.1 Archive structure
 Status: completed.
@@ -58,16 +58,25 @@ Workflow and Dockerfiles reference existing package paths.
 ## 4. GitHub publication
 
 ### 4.1 Branch
-Status: in_progress.
+Status: completed.
 
-Expected branch: `chatgpt/build-daytona-minimal-images`.
+Branch: `chatgpt/build-daytona-minimal-images`.
 
-### 4.2 Commit
-Status: in_progress.
+### 4.2 Initial commit
+Status: completed.
 
-Expected commit message: `ci: build Daytona minimal images from archive`.
+Commit: `45c056fedecd9a2144708a6d9ce828b8691afcd9`.
 
 ### 4.3 Push-triggered Actions run
-Status: pending.
+Status: failed.
 
-The run must be created by the branch commit push event, not by `workflow_dispatch`.
+Run: `25541524895`.
+Event: `push`.
+Failure: runtime image build failed at `npm install -g` with `EACCES` for `/usr/local/lib/node_modules/@playwright`.
+
+## 5. Remediation
+
+### 5.1 npm prefix fix
+Status: in_progress.
+
+Change runtime Dockerfile to install Node Playwright packages under `/home/daytona/.local` and include `/home/daytona/.local/lib/node_modules` in `NODE_PATH`.
