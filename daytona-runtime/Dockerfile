@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     ripgrep \
     golang-1.24 \
+    git \
+    openssh-client \
+    ca-certificates \
     && apt-get install -y --no-install-recommends \
         chromium \
         libnss3 \
