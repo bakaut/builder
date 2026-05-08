@@ -1,5 +1,9 @@
 FROM python:3.11.14-slim
 
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    CHROMIUM_PATH=/usr/bin/chromium \
+    CHROME_BIN=/usr/bin/chromium
+
 # Update package list and install required dependencies
 RUN apt-get update && apt-get install -y \
     curl \
@@ -9,6 +13,14 @@ RUN apt-get update && apt-get install -y \
     python3-venv \
     ripgrep \
     golang-1.24 \
+    && apt-get install -y --no-install-recommends \
+        chromium \
+        libnss3 \
+        libatk-bridge2.0-0 \
+        libgtk-3-0 \
+        libgbm1 \
+        libasound2 \
+        fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Change default shell to bash
@@ -17,7 +29,11 @@ RUN chsh -s /bin/bash
 SHELL ["/bin/bash", "-c"]
 
 # Install pipx and uv
-RUN python3 -m pip install --no-cache-dir pipx==1.8.0 && pipx ensurepath && pipx install uv==0.9.26
+RUN python3 -m pip install --no-cache-dir \
+    pipx==1.8.0 && \
+    pipx ensurepath && \
+    pipx install uv==0.9.26 && \
+    pipx install playwright==1.56.0
 
 # Install Python LSP, daytona and essential pip packages
 RUN python3 -m pip install --no-cache-dir \
@@ -47,23 +63,8 @@ RUN source $NVM_DIR/nvm.sh \
 ENV NODE_PATH=$NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-RUN npm install -g ts-node@10.9.2 typescript@5.9.3 typescript-language-server@5.1.3
+RUN npm install -g ts-node@10.9.2 typescript@5.9.3 typescript-language-server@5.1.3 playwright@1.56.0 @playwright/test@1.56.0
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    libnss3 \
-    libatk-bridge2.0-0 \
-    libgtk-3-0 \
-    libgbm1 \
-    libasound2 \
-    fonts-liberation \
-    && rm -rf /var/lib/apt/lists/* \
-    && python3 -m pip install --no-cache-dir playwright==1.56.0 \
-    && npm install -g playwright@1.56.0 @playwright/test@1.56.0
-
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
-    CHROMIUM_PATH=/usr/bin/chromium \
-    CHROME_BIN=/usr/bin/chromium
 
 # Switch to Daytona user
 USER daytona
