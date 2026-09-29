@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY pyproject.toml ./
+COPY backend/pyproject.toml ./
 RUN mkdir -p app && touch app/__init__.py && \
     pip install --no-cache-dir '.[test]' && \
     if [ "$INSTALL_AUDIO_AI" = "true" ]; then pip install --no-cache-dir '.[audio]'; fi && \
